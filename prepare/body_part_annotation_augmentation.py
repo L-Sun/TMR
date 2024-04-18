@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 import marshmallow_dataclass
@@ -208,13 +209,15 @@ Output:
         return json_str.replace("Output:", "").replace("```json\n", "").replace("```", "")
 
 
-async def main():
-    tool = BodyPartAnnotationTool(
-        base_url=BASE_URL,
-        api_key=API_KEY,
-    )
+tool = BodyPartAnnotationTool(
+    base_url=BASE_URL,
+    api_key=API_KEY,
+)
 
-    original_annotations_path = Path("datasets/annotations/humanml3d/annotations.json")
+
+async def batch_augment(original_annotations_path: Path, output_path: Path):
+
+    body_part_group_annotations_dir = Path("datasets/annotations/humanml3d/body_part_group_annotations")
     with open(original_annotations_path, "r") as f:
         original_annotation_json: dict = orjson.loads(f.read())
 
@@ -226,7 +229,6 @@ async def main():
                     "text": annotation["text"],
                 })
 
-    body_part_group_annotations_dir = Path("datasets/annotations/humanml3d/body_part_group_annotations")
     if not body_part_group_annotations_dir.exists():
         body_part_group_annotations_dir.mkdir(parents=True)
 
@@ -249,13 +251,19 @@ async def main():
         tool.save_result(body_part_group_annotations_path, group_result)
 
     # merge all group annotations
-    body_part_annotations_path = Path("datasets/annotations/humanml3d/body_part_annotations.json")
-    result = tool.load_result(body_part_annotations_path)
+    result = tool.load_result(output_path)
     for group_result_path in tqdm(list(body_part_group_annotations_dir.glob("*.json")), desc="Merge"):
         group_result = tool.load_result(group_result_path)
         result |= group_result
 
-    tool.save_result(body_part_annotations_path, result)
+    tool.save_result(output_path, result)
+
+
+def split_for_tmr(original_annotations_path: Path, body_part_annotations_path: Path):
+    result = tool.load_result(body_part_annotations_path)
+
+    with open(original_annotations_path, "r") as f:
+        original_annotation_json: dict = orjson.loads(f.read())
 
     # copy to part
     for part_name in ["head", "left_arm", "right_arm", "torso", "left_leg", "right_leg"]:
@@ -266,10 +274,24 @@ async def main():
             for annotation in original_annotation_json[key_id]["annotations"]:
                 seg_id = annotation["seg_id"]
                 if seg_id in result:
-                    annotation["text"] = asdict(result[seg_id])[part_name]["text"]
+                    annotation["text"] = asdict(result[seg_id])[part_name]["text"] # replace with part-level text
 
         with open(save_path, 'wb') as f:
             f.write(orjson.dumps(original_annotation_json))
+
+
+async def main():
+    original_annotations_path = Path("datasets/annotations/humanml3d/annotations.json")
+    body_part_annotations_path = Path("datasets/annotations/humanml3d/body_part_annotations.json")
+
+    parser = ArgumentParser()
+    parser.add_argument("--only_split", type=bool, default=False)
+
+    args = parser.parse_args()
+    if not args.only_split:
+        await batch_augment(original_annotations_path, body_part_annotations_path)
+
+    split_for_tmr(original_annotations_path, body_part_annotations_path)
 
 
 if __name__ == '__main__':
