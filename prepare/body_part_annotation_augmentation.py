@@ -7,7 +7,7 @@ import asyncio
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
 
-BASE_URL = "https://api.openai.com/v1",
+BASE_URL = "https://api.openai.com/v1"
 API_KEY = "",
 
 
