@@ -1,0 +1,9 @@
+defaults:
+  - _base
+  - _self_
+
+motion_loader:
+  nfeats: 43
+  base_dir: datasets/motions/body_part_guoh3dfeats/torso
+
+path: datasets/annotations/body_part/humanml3d/torso

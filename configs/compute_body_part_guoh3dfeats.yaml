@@ -1,0 +1,10 @@
+defaults:
+  - defaults
+  - _self_
+
+base_folder: datasets/motions/pose_data
+output_folder: datasets/motions/body_part_guoh3dfeats/${part_name}
+
+part_name: ???
+
+force_redo: false # true to recompute the features

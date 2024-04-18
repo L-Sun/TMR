@@ -1,0 +1,12 @@
+[13/12/23 01:29:57][__main__][INFO] - Computing motion stats
+[13/12/23 01:30:06][__main__][INFO] - Saving them in stats/humanml3d_head/guoh3dfeats
+[13/12/23 01:30:12][__main__][INFO] - Computing motion stats
+[13/12/23 01:30:18][__main__][INFO] - Computing motion stats
+[13/12/23 01:30:21][__main__][INFO] - Saving them in stats/humanml3d_left_leg/guoh3dfeats
+[13/12/23 01:30:28][__main__][INFO] - Saving them in stats/humanml3d_left_arm/guoh3dfeats
+[13/12/23 01:30:29][__main__][INFO] - Computing motion stats
+[13/12/23 01:30:38][__main__][INFO] - Saving them in stats/humanml3d_right_leg/guoh3dfeats
+[13/12/23 01:30:42][__main__][INFO] - Computing motion stats
+[13/12/23 01:30:50][__main__][INFO] - Computing motion stats
+[13/12/23 01:30:51][__main__][INFO] - Saving them in stats/humanml3d_right_arm/guoh3dfeats
+[13/12/23 01:30:59][__main__][INFO] - Saving them in stats/humanml3d_torso/guoh3dfeats

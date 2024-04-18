@@ -22,7 +22,7 @@ def train(cfg: DictConfig):
         logger.info("Training script")
         logger.info(f"The config can be found here: \n{config_path}")
 
-    import src.prepare  # noqa
+    import src.prepare # noqa
     import pytorch_lightning as pl
 
     pl.seed_everything(cfg.seed)

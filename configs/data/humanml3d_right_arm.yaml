@@ -1,0 +1,9 @@
+defaults:
+  - _base
+  - _self_
+
+motion_loader:
+  nfeats: 48
+  base_dir: datasets/motions/body_part_guoh3dfeats/right_arm
+
+path: datasets/annotations/body_part/humanml3d/right_arm

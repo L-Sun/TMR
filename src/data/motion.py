@@ -56,6 +56,7 @@ class Normalizer:
     def __call__(self, x):
         if self.disable:
             return x
+
         x = (x - self.mean) / (self.std + self.eps)
         return x
 

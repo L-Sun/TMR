@@ -1,0 +1,29 @@
+data:
+  motion_loader:
+    _target_: src.data.motion.AMASSMotionLoader
+    base_dir: datasets/motions/body_part_guoh3dfeats/torso
+    normalizer:
+      _target_: src.data.motion.Normalizer
+      base_dir: stats/${hydra:runtime.choices.data}/${hydra:runtime.choices.data/motion_loader}
+      eps: 1.0e-12
+      disable: true
+    fps: 20.0
+    nfeats: 43
+  _target_: src.data.text_motion.TextMotionDataset
+  path: datasets/annotations/body_part/humanml3d/torso
+  text_to_token_emb:
+    _target_: src.data.text.TokenEmbeddings
+    path: ${data.path}
+    modelname: distilbert-base-uncased
+    preload: true
+    disable: true
+  text_to_sent_emb:
+    _target_: src.data.text.SentenceEmbeddings
+    path: ${data.path}
+    modelname: sentence-transformers/all-mpnet-base-v2
+    preload: true
+    disable: true
+  preload: false
+run_dir: logs
+seed: 1234
+logger_level: INFO

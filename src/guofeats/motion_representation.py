@@ -43,11 +43,9 @@ def uniform_skeleton(
     # print(scale_rt)
     src_root_pos = positions[:, 0]
     tgt_root_pos = src_root_pos * scale_rt
-
     """Inverse Kinematics"""
     quat_params = src_skel.inverse_kinematics_np(positions, face_joint_indx)
     # print(quat_params.shape)
-
     """Forward Kinematics"""
     src_skel.set_offset(target_offset)
     new_joints = src_skel.forward_kinematics_np(quat_params, tgt_root_pos)
@@ -69,7 +67,6 @@ def process_file(
     # (seq_len, joints_num, 3)
     #     '''Down Sample'''
     #     positions = positions[::ds_num]
-
     """Uniform Skeleton"""
     positions = uniform_skeleton(
         positions,
@@ -80,14 +77,12 @@ def process_file(
         l_idx2,
         face_joint_indx,
     )
-
     """Put on Floor"""
     floor_height = positions.min(axis=0).min(axis=0)[1]
     positions[:, :, 1] -= floor_height
     #     print(floor_height)
 
     #     plot_3d_motion("./positions_1.mp4", kinematic_chain, positions, 'title', fps=20)
-
     """XZ at origin"""
     root_pos_init = positions[0]
     root_pose_init_xz = root_pos_init[0] * np.array([1, 0, 1])
@@ -96,7 +91,6 @@ def process_file(
     # '''Move the first pose to origin '''
     # root_pos_init = positions[0]
     # positions = positions - root_pos_init[0]
-
     """All initially face Z+"""
     r_hip, l_hip, sdr_r, sdr_l = face_joint_indx
     across1 = root_pos_init[r_hip] - root_pos_init[l_hip]
@@ -107,22 +101,19 @@ def process_file(
     # forward (3,), rotate around y-axis
     forward_init = np.cross(np.array([[0, 1, 0]]), across, axis=-1)
     # forward (3,)
-    forward_init = (
-        forward_init / np.sqrt((forward_init**2).sum(axis=-1))[..., np.newaxis]
-    )
+    forward_init = (forward_init / np.sqrt((forward_init**2).sum(axis=-1))[..., np.newaxis])
 
     #     print(forward_init)
 
     target = np.array([[0, 0, 1]])
     root_quat_init = qbetween_np(forward_init, target)
-    root_quat_init = np.ones(positions.shape[:-1] + (4,)) * root_quat_init
+    root_quat_init = np.ones(positions.shape[:-1] + (4, )) * root_quat_init
 
     # positions_b = positions.copy()
 
     positions = qrot_np(root_quat_init, positions)
 
     #     plot_3d_motion("./positions_2.mp4", kinematic_chain, positions, 'title', fps=20)
-
     """New ground truth positions"""
     global_positions = positions.copy()
 
@@ -132,22 +123,20 @@ def process_file(
     # plt.ylabel('z')
     # plt.axis('equal')
     # plt.show()
-
     """ Get Foot Contacts """
-
     def foot_detect(positions, thres):
         velfactor, _ = np.array([thres, thres]), np.array([3.0, 2.0])
 
-        feet_l_x = (positions[1:, fid_l, 0] - positions[:-1, fid_l, 0]) ** 2
-        feet_l_y = (positions[1:, fid_l, 1] - positions[:-1, fid_l, 1]) ** 2
-        feet_l_z = (positions[1:, fid_l, 2] - positions[:-1, fid_l, 2]) ** 2
+        feet_l_x = (positions[1:, fid_l, 0] - positions[:-1, fid_l, 0])**2
+        feet_l_y = (positions[1:, fid_l, 1] - positions[:-1, fid_l, 1])**2
+        feet_l_z = (positions[1:, fid_l, 2] - positions[:-1, fid_l, 2])**2
         #     feet_l_h = positions[:-1,fid_l,1]
         #     feet_l = (((feet_l_x + feet_l_y + feet_l_z) < velfactor) & (feet_l_h < heightfactor)).astype(np.float)
         feet_l = ((feet_l_x + feet_l_y + feet_l_z) < velfactor).astype(np.float32)
 
-        feet_r_x = (positions[1:, fid_r, 0] - positions[:-1, fid_r, 0]) ** 2
-        feet_r_y = (positions[1:, fid_r, 1] - positions[:-1, fid_r, 1]) ** 2
-        feet_r_z = (positions[1:, fid_r, 2] - positions[:-1, fid_r, 2]) ** 2
+        feet_r_x = (positions[1:, fid_r, 0] - positions[:-1, fid_r, 0])**2
+        feet_r_y = (positions[1:, fid_r, 1] - positions[:-1, fid_r, 1])**2
+        feet_r_z = (positions[1:, fid_r, 2] - positions[:-1, fid_r, 2])**2
         #     feet_r_h = positions[:-1,fid_r,1]
         #     feet_r = (((feet_r_x + feet_r_y + feet_r_z) < velfactor) & (feet_r_h < heightfactor)).astype(np.float)
         feet_r = (((feet_r_x + feet_r_y + feet_r_z) < velfactor)).astype(np.float32)
@@ -156,7 +145,6 @@ def process_file(
     #
     feet_l, feet_r = foot_detect(positions, feet_thre)
     # feet_l, feet_r = foot_detect(positions, 0.002)
-
     """Quaternion and Cartesian representation"""
     r_rot = None
 
@@ -165,18 +153,13 @@ def process_file(
         positions[..., 0] -= positions[:, 0:1, 0]
         positions[..., 2] -= positions[:, 0:1, 2]
         """All pose face Z+"""
-        positions = qrot_np(
-            np.repeat(r_rot[:, None], positions.shape[1], axis=1), positions
-        )
+        positions = qrot_np(np.repeat(r_rot[:, None], positions.shape[1], axis=1), positions)
         return positions
 
     def get_quaternion(positions, n_raw_offsets, kinematic_chain):
         skel = Skeleton(n_raw_offsets, kinematic_chain, "cpu")
         # (seq_len, joints_num, 4)
-        quat_params = skel.inverse_kinematics_np(
-            positions, face_joint_indx, smooth_forward=False
-        )
-
+        quat_params = skel.inverse_kinematics_np(positions, face_joint_indx, smooth_forward=False)
         """Fix Quaternion Discontinuity"""
         quat_params = qfix(quat_params)
         # (seq_len, 4)
@@ -197,10 +180,7 @@ def process_file(
     def get_cont6d_params(positions):
         skel = Skeleton(n_raw_offsets, kinematic_chain, "cpu")
         # (seq_len, joints_num, 4)
-        quat_params = skel.inverse_kinematics_np(
-            positions, face_joint_indx, smooth_forward=True
-        )
-
+        quat_params = skel.inverse_kinematics_np(positions, face_joint_indx, smooth_forward=True)
         """Quaternion to continuous 6D"""
         cont_6d_params = quaternion_to_cont6d_np(quat_params)
         # (seq_len, 4)
@@ -231,10 +211,8 @@ def process_file(
     # plt.ylabel('z')
     # plt.axis('equal')
     # plt.show()
-
     """Root height"""
     root_y = positions[:, 0, 1:2]
-
     """Root rotation and linear velocity"""
     # (seq_len-1, 1) rotation velocity along y-axis
     # (seq_len-1, 2) linear velovity on xz plane
@@ -242,15 +220,12 @@ def process_file(
     l_velocity = velocity[:, [0, 2]]
     #     print(r_velocity.shape, l_velocity.shape, root_y.shape)
     root_data = np.concatenate([r_velocity, l_velocity, root_y[:-1]], axis=-1)
-
     """Get Joint Rotation Representation"""
     # (seq_len, (joints_num-1) *6) quaternion for skeleton joints
     rot_data = cont_6d_params[:, 1:].reshape(len(cont_6d_params), -1)
-
     """Get Joint Rotation Invariant Position Represention"""
     # (seq_len, (joints_num-1)*3) local joint position
     ric_data = positions[:, 1:].reshape(len(positions), -1)
-
     """Get Joint Velocity Representation"""
     # (seq_len-1, joints_num*3)
     local_vel = qrot_np(
@@ -283,11 +258,11 @@ def recover_root_rot_pos(data):
     r_rot_ang[..., 1:] = rot_vel[..., :-1]
     r_rot_ang = torch.cumsum(r_rot_ang, dim=-1)
 
-    r_rot_quat = torch.zeros(data.shape[:-1] + (4,)).to(data.device)
+    r_rot_quat = torch.zeros(data.shape[:-1] + (4, )).to(data.device)
     r_rot_quat[..., 0] = torch.cos(r_rot_ang)
     r_rot_quat[..., 2] = torch.sin(r_rot_ang)
 
-    r_pos = torch.zeros(data.shape[:-1] + (3,)).to(data.device)
+    r_pos = torch.zeros(data.shape[:-1] + (3, )).to(data.device)
     r_pos[..., 1:, [0, 2]] = data[..., :-1, 1:3]
     """Add Y-axis rotation to root position"""
     r_pos = qrot(qinv(r_rot_quat), r_pos)
@@ -317,18 +292,13 @@ def recover_from_rot(data, joints_num, skeleton):
 
 def recover_from_ric(data, joints_num):
     r_rot_quat, r_pos = recover_root_rot_pos(data)
-    positions = data[..., 4 : (joints_num - 1) * 3 + 4]
+    positions = data[..., 4:(joints_num - 1) * 3 + 4]
     positions = positions.view(positions.shape[:-1] + (-1, 3))
-
     """Add Y-axis rotation to local joints"""
-    positions = qrot(
-        qinv(r_rot_quat[..., None, :]).expand(positions.shape[:-1] + (4,)), positions
-    )
-
+    positions = qrot(qinv(r_rot_quat[..., None, :]).expand(positions.shape[:-1] + (4, )), positions)
     """Add root XZ to joints"""
     positions[..., 0] += r_pos[..., 0:1]
     positions[..., 2] += r_pos[..., 2:3]
-
     """Concate root and joints"""
     positions = torch.cat([r_pos.unsqueeze(-2), positions], dim=-2)
 
@@ -359,6 +329,7 @@ def _get_joints_to_guofeats():
     tgt_skel = Skeleton(n_raw_offsets, kinematic_chain, "cpu")
     # (joints_num, 3)
     tgt_offsets = tgt_skel.get_offsets_joints(example_data)
+
     # print(tgt_offsets)
 
     def transform(source_data):
@@ -396,3 +367,99 @@ def _get_guofeats_to_joints():
 
 joints_to_guofeats = _get_joints_to_guofeats()
 guofeats_to_joints = _get_guofeats_to_joints()
+
+
+def rearrange_guofeats(x: np.ndarray):
+    num_joints = 22
+
+    ric_data_offset = 4
+    rot_data_offset = ric_data_offset + 3 * (num_joints - 1)
+    local_vel_offset = rot_data_offset + 6 * (num_joints - 1)
+    feet_contact_offset = local_vel_offset + 3 * num_joints
+
+    assert feet_contact_offset + 4 == x.shape[-1]
+
+    def get_ric_rot_vel(part_index: list[int]):
+        ric_data = np.concatenate([x[..., ric_data_offset + 3 * (joint_index - 1):ric_data_offset + 3 * joint_index] for joint_index in part_index], axis=-1)
+        rot_data = np.concatenate([x[..., rot_data_offset + 6 * (joint_index - 1):rot_data_offset + 6 * joint_index] for joint_index in part_index], axis=-1)
+        local_vel_data = np.concatenate([x[..., local_vel_offset + 3 * joint_index:local_vel_offset + 3 * (joint_index + 1)] for joint_index in part_index], axis=-1)
+
+        return np.concatenate([ric_data, rot_data, local_vel_data], axis=-1)
+
+    head_part_index = [12, 15]
+    left_arm_part_index = [13, 16, 18, 20]
+    right_arm_part_index = [14, 17, 19, 21]
+    torso_part_index = [0, 3, 6, 9]
+    left_leg_part_index = [1, 4, 7, 10]
+    right_leg_part_index = [2, 5, 8, 11]
+
+    head_features = get_ric_rot_vel(head_part_index)
+    left_arm_features = get_ric_rot_vel(left_arm_part_index)
+    right_arm_features = get_ric_rot_vel(right_arm_part_index)
+    torso_features = get_ric_rot_vel(torso_part_index[1:])
+    left_leg_features = get_ric_rot_vel(left_leg_part_index)
+    right_leg_features = get_ric_rot_vel(right_leg_part_index)
+
+    torso_features = np.concatenate([torso_features, x[..., 0:4], x[..., local_vel_offset:local_vel_offset + 3]], axis=-1)
+    left_leg_features = np.concatenate([left_leg_features, x[..., feet_contact_offset:feet_contact_offset + 2]], axis=-1)
+    right_leg_features = np.concatenate([right_leg_features, x[..., feet_contact_offset + 2:feet_contact_offset + 4]], axis=-1)
+
+    return {
+        "head": head_features,
+        "left_arm": left_arm_features,
+        "right_arm": right_arm_features,
+        "torso": torso_features,
+        "left_leg": left_leg_features,
+        "right_leg": right_leg_features,
+    }
+
+
+from torch import Tensor
+
+
+def recover_rearranged_guofeats(x: dict[str, Tensor]):
+    num_joints = 22
+
+    ric_data_offset = 4
+    rot_data_offset = ric_data_offset + 3 * (num_joints - 1)
+    local_vel_offset = rot_data_offset + 6 * (num_joints - 1)
+    feet_contact_offset = local_vel_offset + 3 * num_joints
+
+    assert feet_contact_offset + 4 == 263
+
+    head_part_index = [12, 15]
+    left_arm_part_index = [13, 16, 18, 20]
+    right_arm_part_index = [14, 17, 19, 21]
+    torso_part_index = [0, 3, 6, 9]
+    left_leg_part_index = [1, 4, 7, 10]
+    right_leg_part_index = [2, 5, 8, 11]
+
+    result = torch.empty(*x["head"].shape[:-1], 263)
+    result[..., 0:4] = x["torso"][..., -7:-3]
+    result[..., local_vel_offset:local_vel_offset + 3] = x["torso"][..., -3:]
+    result[..., -4:-2] = x["left_leg"][..., -2:]
+    result[..., -2:] = x["right_leg"][..., -2:]
+
+    def set_ric_rot_vel(part_index: list[int], features: Tensor):
+        _ric_data_offset = 0
+        _rot_data_offset = _ric_data_offset + 3 * len(part_index)
+        _local_vel_offset = _rot_data_offset + 6 * len(part_index)
+        for index, joint_index in enumerate(part_index):
+            result[..., ric_data_offset + 3 * (joint_index - 1):ric_data_offset + 3 * joint_index] = features[..., _ric_data_offset + 3 * index:_ric_data_offset + 3 * (index + 1)]
+            result[..., rot_data_offset + 6 * (joint_index - 1):rot_data_offset + 6 * joint_index] = features[..., _rot_data_offset + 6 * index:_rot_data_offset + 6 * (index + 1)]
+            result[..., local_vel_offset + 3 * joint_index:local_vel_offset + 3 * (joint_index + 1)] = features[..., _local_vel_offset + 3 * index:_local_vel_offset + 3 * (index + 1)]
+
+    set_ric_rot_vel(head_part_index, x["head"])
+    set_ric_rot_vel(left_arm_part_index, x["left_arm"])
+    set_ric_rot_vel(right_arm_part_index, x["right_arm"])
+    set_ric_rot_vel(torso_part_index[1:], x["torso"])
+    set_ric_rot_vel(left_leg_part_index, x["left_leg"])
+    set_ric_rot_vel(right_leg_part_index, x["right_leg"])
+
+    return result
+
+
+if __name__ == "__main__":
+    x = np.empty((1, 263))
+    for key, value in rearrange_guofeats(x).items():
+        print(f"\"{key}\": {value.shape[-1]}")
