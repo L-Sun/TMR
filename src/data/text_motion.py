@@ -1,6 +1,6 @@
 import os
 import codecs as cs
-import orjson  # loading faster than json
+import orjson # loading faster than json
 import json
 
 import numpy as np
